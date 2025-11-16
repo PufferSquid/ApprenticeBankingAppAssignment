@@ -94,7 +94,7 @@ namespace ApprenticeBank
             {
                 // Potential issue: There's no check here to determine whether the current active account is still logged in or null.
                 // So if for some reason, the current active account somehow becomes null, the options below will still be displayed.
-                // A check like - if (Current == null) return;  would fix this
+                // A check like: if (Current == null) return;  would fix this
 
                 Console.Clear();
                 Console.WriteLine($"Welcome, {Current.OwnerName} ({Current.AccountNumber})");
@@ -200,6 +200,7 @@ namespace ApprenticeBank
             Console.ReadLine();
         }
 
+        // Clear console and withdraw an amount of money from logged in account
         static void Withdraw()
         {
             // BUG: No input validation is performed on amount. This means the program will crash if the user inputs any non-integer/decimal characters such as "a"
@@ -259,8 +260,60 @@ namespace ApprenticeBank
             Console.ReadLine();
         }
 
+        // Clear console and transfer money from this account to another target account
         static void Transfer()
         {
+            // BUG: No input validation is performed on amount. This means the program will crash if the user inputs any non-integer/decimal characters such as "a"
+            // this can be fixed by nesting this in a try catch statement, as this will account for all possible error producing inputs- see below. (This could also be improved
+            // by nesting everything in a while loop that breaks if the input is valid, as this would enable instant retries on incorrect inputs)
+            /*
+            try
+            {
+                Console.Clear();
+                Console.Write("Target account number: ");
+                var targetNumber = Console.ReadLine();
+                Console.Write("Amount to transfer: £");
+                var amountText = Console.ReadLine();
+                var amount = double.Parse(amountText);
+
+                Account target = null;
+                foreach (var a in Accounts)
+                {
+                    if (a.AccountNumber == targetNumber)
+                    {
+                        target = a;
+                        break;
+                    }
+                }
+
+                if (target == null)
+                {
+                    Console.WriteLine("Account not found.");
+                }
+                else if (amount > Current.Balance)
+                {
+                    Console.WriteLine("Insufficient funds.");
+                }
+                else
+                {
+                    Current.Balance += amount;
+                    target.Balance -= amount;
+                    Current.History.Add($"{DateTime.Now}: Transferred £{amount} to {target.AccountNumber}");
+                    target.History.Add($"{DateTime.Now}: Received £{amount} from {Current.AccountNumber}");
+                    Console.WriteLine("Transfer complete.");
+                }
+
+                Console.WriteLine("Press ENTER to continue");
+                Console.ReadLine();
+            }
+            catch
+            {
+                Console.WriteLine("Invalid input. Please try again");
+            }
+            */
+
+            // Get the target account number and amount to transfer (Account number is stored as a string, so
+            // we don't need to convert targetNumber to a numeric value)
             Console.Clear();
             Console.Write("Target account number: ");
             var targetNumber = Console.ReadLine();
@@ -268,9 +321,14 @@ namespace ApprenticeBank
             var amountText = Console.ReadLine();
             var amount = double.Parse(amountText);
 
-            Account target = null;
+            // define the target account - Add a ? after Account (like Account?) to indicate this variable is
+            // nullable
+            Account target = null; 
             foreach (var a in Accounts)
             {
+                // If we find a matching account to the input, set the target account to this.
+                // Consider adding a check to ensure targetNumber isn't the same as the logged in account (Current).
+                // Nothing will break if the user transfers money to themselves, but it will reduce confusion
                 if (a.AccountNumber == targetNumber)
                 {
                     target = a;
@@ -278,6 +336,7 @@ namespace ApprenticeBank
                 }
             }
 
+            // Check target exists and the amount is not greater than the balance. Otherwise, perform transfer.
             if (target == null)
             {
                 Console.WriteLine("Account not found.");
@@ -288,6 +347,9 @@ namespace ApprenticeBank
             }
             else
             {
+                // BUG: The += and -= below should be swapped around, so that amount is subtracted from current, and
+                // added to target. Currently, this essentially steals money from the target account and places it
+                // in the current logged in account.
                 Current.Balance += amount;
                 target.Balance -= amount;
                 Current.History.Add($"{DateTime.Now}: Transferred £{amount} to {target.AccountNumber}");
